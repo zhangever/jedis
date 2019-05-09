@@ -115,7 +115,6 @@ public abstract class JedisClusterCommand<T> {
 
   private void releaseConnection(Jedis connection, boolean broken) {
     if (connection != null) {
-      Debugger.removeConn();
       if (broken) {
         connectionHandler.returnBrokenConnection(connection);
       } else {

@@ -20,12 +20,19 @@ public class Debugger {
 
     public static void addConn(String hostInfo) {
         Thread thread = currentThread();
-        connInfos.put(thread, new ConnInfo(System.currentTimeMillis(), thread,
-                new RuntimeException("connDebugger"), hostInfo));
+        if (connInfos.containsKey(thread)) {
+            log("Thread:" + thread + " not return the conn before acquire a new one");
+            simpleLog(connInfos.get(thread).toString());
+        } else {
+            connInfos.put(thread, new ConnInfo(System.currentTimeMillis(), thread,
+                    new RuntimeException("connDebugger"), hostInfo));
+        }
     }
 
     public static void removeConn() {
-        connInfos.remove(currentThread());
+        if (connInfos.remove(currentThread()) == null) {
+            log("Thread:" + currentThread() + " has nothing to return");
+        }
     }
 
     static void checkConn() {

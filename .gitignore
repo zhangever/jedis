@@ -12,3 +12,5 @@ tags
 .idea
 *.aof
 *.rdb
+src/main/java/redis/clients/jedis/tests/
+.DS_Store

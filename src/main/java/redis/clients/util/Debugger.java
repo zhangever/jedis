@@ -30,12 +30,15 @@ public class Debugger {
 
     static void checkConn() {
         long now = System.currentTimeMillis();
+        int numOfHeightCost = 0;
         System.out.println("Jedis-Debugger checking at:" + now + ", sizeOfconnInfos:" + connInfos.size());
         for (ConnInfo connInfo : connInfos.values()) {
             if ((now-connInfo.ts) > 30*1000) {
+                numOfHeightCost++;
                 simpleLog(connInfo.toString());
             }
         }
+        System.out.println("Jedis-Debugger checked at:" + System.currentTimeMillis() + ", numOfHeightCost:" + numOfHeightCost);
     }
 
     static void initCheck() {
@@ -56,15 +59,16 @@ public class Debugger {
     }
 
     public static void log(Exception e) {
-        new MyException(e, currentThread()).printStackTrace();
+        log(exception2String(e));
     }
 
     public static void log(String msg) {
-        System.out.println("Thread:[" + currentThread() + "], currentTs:" + System.currentTimeMillis() + ", detail:" + msg);
+        System.out.println("Thread:[" + currentThread() + "], currentTs:"
+                + System.currentTimeMillis() + ", detail:" + msg);
     }
 
     public static void simpleLog(String msg) {
-        System.out.println("msg");
+        System.out.println(msg);
     }
 
     public static void log(String msg, Exception e) {
@@ -72,17 +76,14 @@ public class Debugger {
         log(e);
     }
 
-    static class MyException extends Exception {
-        final Thread owner;
-        MyException(Exception e, final Thread owner) {
-            super(e);
-            this.owner = (owner==null)?currentThread():owner;
+    static String exception2String(Exception ex) {
+        StringBuilder sb = new StringBuilder(ex.toString());
+        sb.append("\n");
+        for (StackTraceElement element : ex.getStackTrace()) {
+            sb.append("\t" + element + "\n");
         }
 
-        @Override
-        public String toString() {
-            return owner + ":" + super.toString();
-        }
+        return sb.toString();
     }
 
     static class ConnInfo {
@@ -95,14 +96,15 @@ public class Debugger {
         ConnInfo(long ts, Thread thread, Exception ex, String hostInfo) {
             this.ts = ts;
             this.owner = thread;
-            this.ex = new MyException(ex, thread);
+            this.ex = ex;
             this.hostInfo = hostInfo;
         }
 
         @Override
         public String toString() {
-            log(ex);
-            return "ConnInfo[" + hostInfo + "] borrowed by " + owner + " at:" + ts;
+
+            return "ConnInfo[" + hostInfo + "] borrowed by " + owner + " at:" + ts
+                    + "\n" + exception2String(ex);
         }
     }
 }

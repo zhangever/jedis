@@ -59,11 +59,6 @@ public abstract class JedisClusterCommand<T> {
         }
       }
 
-      if (connection != null) {
-        Client client = connection.getClient();
-        Debugger.addConn(client.getHost() + ":" + client.getPort());
-      }
-
       return execute(connection);
     } catch (NoSuchElementException nse) {
       assert connection == null;

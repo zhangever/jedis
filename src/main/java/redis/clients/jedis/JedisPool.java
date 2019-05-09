@@ -6,6 +6,7 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import redis.clients.jedis.exceptions.JedisException;
+import redis.clients.util.Debugger;
 import redis.clients.util.JedisURIHelper;
 import redis.clients.util.Pool;
 
@@ -86,6 +87,13 @@ public class JedisPool extends Pool<Jedis> {
   @Override
   public Jedis getResource() {
     Jedis jedis = super.getResource();
+
+    //todo
+    if (jedis != null) {
+      Client client = jedis.getClient();
+      Debugger.addConn(client.getHost() + ":" + client.getPort());
+    }
+
     jedis.setDataSource(this);
     return jedis;
   }
@@ -93,6 +101,8 @@ public class JedisPool extends Pool<Jedis> {
   public void returnBrokenResource(final Jedis resource) {
     if (resource != null) {
       returnBrokenResourceObject(resource);
+      //todo
+      Debugger.removeConn();
     }
   }
 
@@ -101,6 +111,8 @@ public class JedisPool extends Pool<Jedis> {
       try {
         resource.resetState();
         returnResourceObject(resource);
+        //todo
+        Debugger.removeConn();
       } catch (Exception e) {
         returnBrokenResource(resource);
         throw new JedisException("Could not return the resource to the pool", e);

@@ -52,11 +52,12 @@ public abstract class Pool<T> implements Closeable {
       int maxTotal = internalPool.getMaxTotal();
       int idle = internalPool.getNumIdle();
       int waitings = internalPool.getNumWaiters();
-      Debugger.log("current pool:" + internalPool
+      Debugger.log("current pool status:"
               + ", active:" + numActive
               + ", maxTotal:" + maxTotal
               + ", idle:" + idle
               + ", waitings:" + waitings);
+      Debugger.log(e);
 
       if (e instanceof NoSuchElementException) {
         throw (NoSuchElementException)e;

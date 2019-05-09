@@ -2,12 +2,10 @@ package redis.clients.jedis;
 
 import redis.clients.util.ClusterNodeInformation;
 import redis.clients.util.ClusterNodeInformationParser;
+import redis.clients.util.Debugger;
 import redis.clients.util.SafeEncoder;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -49,10 +47,24 @@ public class JedisClusterInfoCache {
     }
   }
 
-  public void discoverClusterSlots(Jedis jedis) {
-    w.lock();
+	public void printSlot(){
+		Set<Map.Entry<Integer, JedisPool>> entries = slots.entrySet();
+		Debugger.log("start========================= size:"+entries.size());
+		for (Map.Entry<Integer, JedisPool> entry : entries){
+			Jedis resource = entry.getValue().getResource();
+			if (resource != null){
+				if (resource.getClient() != null){
+					Debugger.log("solt:" + entry.getKey() + ", host:" + resource.getClient().getHost() + ":" +resource.getClient().getPort());
+				}
+			}
+		}
+	}
+
+	public void discoverClusterSlots(Jedis jedis) {
+		w.lock();
 
     try {
+      printSlot();
       this.slots.clear();
 
       List<Object> slots = jedis.clusterSlots();
@@ -77,6 +89,8 @@ public class JedisClusterInfoCache {
 
         setNodeIfNotExist(targetNode);
         assignSlotsToNode(slotNums, targetNode);
+        Debugger.log("重置之后================================================");
+        printSlot();
       }
     } finally {
       w.unlock();

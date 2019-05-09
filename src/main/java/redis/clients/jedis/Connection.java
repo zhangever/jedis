@@ -1,19 +1,20 @@
 package redis.clients.jedis;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.util.ArrayList;
+import java.util.List;
+
 import redis.clients.jedis.Protocol.Command;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisDataException;
 import redis.clients.util.RedisInputStream;
 import redis.clients.util.RedisOutputStream;
 import redis.clients.util.SafeEncoder;
-
-import java.io.Closeable;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Connection implements Closeable {
   private String host;
@@ -145,7 +146,11 @@ public class Connection implements Closeable {
         inputStream = new RedisInputStream(socket.getInputStream());
       } catch (IOException ex) {
         broken = true;
-        throw new JedisConnectionException(ex);
+				if (ex instanceof SocketTimeoutException && ex.getMessage().equalsIgnoreCase("connect timed out")) {
+					throw new JedisConnectionException("连接超时,请检查目标Redis节点(" + host + ":" + port + ")所在机器的防火墙是否关闭.");
+				}
+				throw new JedisConnectionException("目标Redis节点(" + host + ":" + port + ")未能正常运行.");
+//				throw new JedisConnectionException(ex);
       }
     }
   }

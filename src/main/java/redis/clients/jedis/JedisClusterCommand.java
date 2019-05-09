@@ -6,7 +6,10 @@ import redis.clients.jedis.exceptions.JedisClusterMaxRedirectionsException;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisMovedDataException;
 import redis.clients.jedis.exceptions.JedisRedirectionException;
+import redis.clients.util.Debugger;
 import redis.clients.util.JedisClusterCRC16;
+
+import java.util.NoSuchElementException;
 
 public abstract class JedisClusterCommand<T> {
 
@@ -56,11 +59,30 @@ public abstract class JedisClusterCommand<T> {
         }
       }
 
+      if (connection != null) {
+        Client client = connection.getClient();
+        Debugger.addConn(client.getHost() + ":" + client.getPort());
+      }
+
       return execute(connection);
+    } catch (NoSuchElementException nse) {
+      assert connection == null;
+
+      Debugger.log("redirection:" + redirections + ", key:"
+              + key + ", slot:" + JedisClusterCRC16.getSlot(key), nse);
+      // retry
+      return runWithRetries(key, redirections - 1, tryRandomNode, asking);
     } catch (JedisConnectionException jce) {
       if (tryRandomNode) {
         // maybe all connection is down
         throw jce;
+      }
+
+      Debugger.log("redirection:" + redirections + ", key:"
+              + key + ", slot:" + JedisClusterCRC16.getSlot(key), jce);
+      if (connection != null) {
+        Debugger.log("host:" + connection.getClient().getHost()
+                + ", port:" + connection.getClient().getPort());
       }
 
       releaseConnection(connection, true);
@@ -69,6 +91,12 @@ public abstract class JedisClusterCommand<T> {
       // retry with random connection
       return runWithRetries(key, redirections - 1, true, asking);
     } catch (JedisRedirectionException jre) {
+      Debugger.log("redirection:" + redirections + ", key:"
+              + key + ", slot:" + JedisClusterCRC16.getSlot(key), jce);
+      if (connection != null) {
+        Debugger.log("host:" + connection.getClient().getHost()
+                + ", port:" + connection.getClient().getPort());
+      }
       if (jre instanceof JedisAskDataException) {
         asking = true;
         askConnection.set(this.connectionHandler.getConnectionFromNode(jre.getTargetNode()));
@@ -92,6 +120,7 @@ public abstract class JedisClusterCommand<T> {
 
   private void releaseConnection(Jedis connection, boolean broken) {
     if (connection != null) {
+      Debugger.removeConn();
       if (broken) {
         connectionHandler.returnBrokenConnection(connection);
       } else {

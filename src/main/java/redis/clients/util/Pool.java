@@ -1,6 +1,7 @@
 package redis.clients.util;
 
 import java.io.Closeable;
+import java.util.NoSuchElementException;
 
 import org.apache.commons.pool2.PooledObjectFactory;
 import org.apache.commons.pool2.impl.GenericObjectPool;
@@ -47,6 +48,19 @@ public abstract class Pool<T> implements Closeable {
     try {
       return internalPool.borrowObject();
     } catch (Exception e) {
+      int numActive = internalPool.getNumActive();
+      int maxTotal = internalPool.getMaxTotal();
+      int idle = internalPool.getNumIdle();
+      int waitings = internalPool.getNumWaiters();
+      Debugger.log("current pool:" + internalPool
+              + ", active:" + numActive
+              + ", maxTotal:" + maxTotal
+              + ", idle:" + idle
+              + ", waitings:" + waitings);
+
+      if (e instanceof NoSuchElementException) {
+        throw (NoSuchElementException)e;
+      }
       throw new JedisConnectionException("Could not get a resource from the pool", e);
     }
   }

@@ -92,7 +92,7 @@ public abstract class JedisClusterCommand<T> {
       return runWithRetries(key, redirections - 1, true, asking);
     } catch (JedisRedirectionException jre) {
       Debugger.log("redirection:" + redirections + ", key:"
-              + key + ", slot:" + JedisClusterCRC16.getSlot(key), jce);
+              + key + ", slot:" + JedisClusterCRC16.getSlot(key), jre);
       if (connection != null) {
         Debugger.log("host:" + connection.getClient().getHost()
                 + ", port:" + connection.getClient().getPort());

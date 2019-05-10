@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Debugger {
     private final static AtomicInteger seq = new AtomicInteger(0);
+    private static long counter = 0;
     private final static ScheduledExecutorService schedulerExecutorService = Executors.newScheduledThreadPool(1,
             new ThreadFactory() {
                 @Override
@@ -21,7 +22,7 @@ public class Debugger {
     public static void addConn(String hostInfo) {
         Thread thread = currentThread();
         if (connInfos.containsKey(thread)) {
-            log("Thread:" + thread + " not return the conn before acquire a new one");
+            log("Jedis-Debugger-Error:Thread:" + thread + " not return the conn before acquire a new one");
             simpleLog(connInfos.get(thread).toString());
         } else {
             connInfos.put(thread, new ConnInfo(System.currentTimeMillis(), thread,
@@ -31,21 +32,26 @@ public class Debugger {
 
     public static void removeConn() {
         if (connInfos.remove(currentThread()) == null) {
-            log("Thread:" + currentThread() + " has nothing to return");
+            log("Jedis-Debugger-Error:Thread:" + currentThread() + " has nothing to return");
         }
     }
 
     static void checkConn() {
         long now = System.currentTimeMillis();
         int numOfHeightCost = 0;
-        System.out.println("Jedis-Debugger checking at:" + now + ", sizeOfconnInfos:" + connInfos.size());
+        if (counter % 100 == 0) {
+            System.out.println("Jedis-Debugger checking at:" + now + ", sizeOfconnInfos:" + connInfos.size());
+        }
         for (ConnInfo connInfo : connInfos.values()) {
             if ((now-connInfo.ts) > 30*1000) {
                 numOfHeightCost++;
                 simpleLog(connInfo.toString());
             }
         }
-        System.out.println("Jedis-Debugger checked at:" + System.currentTimeMillis() + ", numOfHeightCost:" + numOfHeightCost);
+        if (numOfHeightCost > 0 || counter % 100 ==0) {
+            System.out.println("Jedis-Debugger-Error:Jedis-Debugger checked at:" + System.currentTimeMillis() + ", numOfHeightCost:" + numOfHeightCost);
+        }
+        counter++;
     }
 
     static void initCheck() {
@@ -70,7 +76,7 @@ public class Debugger {
     }
 
     public static void log(String msg) {
-        System.out.println("Thread:[" + currentThread() + "], currentTs:"
+        System.out.println("Jedis-Debugger:Thread:[" + currentThread() + "], currentTs:"
                 + System.currentTimeMillis() + ", detail:" + msg);
     }
 
@@ -110,7 +116,7 @@ public class Debugger {
         @Override
         public String toString() {
 
-            return "ConnInfo[" + hostInfo + "] borrowed by " + owner + " at:" + ts
+            return "Jedis-Debugger-Error:ConnInfo[" + hostInfo + "] borrowed by " + owner + " at:" + ts
                     + "\n" + exception2String(ex);
         }
     }

@@ -39,7 +39,7 @@ public class Debugger {
     static void checkConn() {
         long now = System.currentTimeMillis();
         int numOfHeightCost = 0;
-        if (counter % 100 == 0) {
+        if (counter % 1000 == 0) {
             System.out.println("Jedis-Debugger checking at:" + now + ", sizeOfconnInfos:" + connInfos.size());
         }
         for (ConnInfo connInfo : connInfos.values()) {
@@ -48,7 +48,7 @@ public class Debugger {
                 simpleLog(connInfo.toString());
             }
         }
-        if (numOfHeightCost > 0 || counter % 100 ==0) {
+        if (numOfHeightCost > 0 || counter % 1000 ==0) {
             System.out.println("Jedis-Debugger-Error:Jedis-Debugger checked at:" + System.currentTimeMillis() + ", numOfHeightCost:" + numOfHeightCost);
         }
         counter++;

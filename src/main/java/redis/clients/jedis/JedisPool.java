@@ -7,6 +7,7 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import redis.clients.jedis.exceptions.JedisException;
 import redis.clients.util.Debugger;
+import redis.clients.util.JedisClusterCRC16;
 import redis.clients.util.JedisURIHelper;
 import redis.clients.util.Pool;
 
@@ -109,10 +110,20 @@ public class JedisPool extends Pool<Jedis> {
   public void returnResource(final Jedis resource) {
     if (resource != null) {
       try {
-        resource.resetState();
-        returnResourceObject(resource);
-        //todo
-        Debugger.removeConn();
+    	  try {
+    		  resource.resetState();
+    	  } catch (Exception e) {
+    		  Debugger.log("resetState failed when returnResource", e);
+    		  throw e;
+    	  }
+    	  try {
+    		  returnResourceObject(resource);
+    	  } catch (Exception e) {
+    		  Debugger.log("returnResourceObject failed when returnResource", e);
+    		  throw e;
+    	  }
+          //todo
+          Debugger.removeConn();
       } catch (Exception e) {
         returnBrokenResource(resource);
         throw new JedisException("Could not return the resource to the pool", e);

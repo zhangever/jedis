@@ -97,7 +97,8 @@ public abstract class Pool<T> implements Closeable {
     try {
       internalPool.invalidateObject(resource);
     } catch (Exception e) {
-      throw new JedisException("Could not return the resource to the pool", e);
+    	Debugger.log("invalidateObject failed when returnBrokenResourceObject", e);
+        throw new JedisException("Could not return the resource to the pool", e);
     }
   }
 

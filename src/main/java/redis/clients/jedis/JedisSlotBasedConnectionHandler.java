@@ -8,6 +8,7 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import java.util.Set;
 
 import redis.clients.jedis.exceptions.JedisConnectionException;
+import redis.clients.util.Debugger;
 
 public class JedisSlotBasedConnectionHandler extends JedisClusterConnectionHandler {
 
@@ -42,6 +43,8 @@ public class JedisSlotBasedConnectionHandler extends JedisClusterConnectionHandl
         if (jedis != null) {
           pool.returnBrokenResource(jedis);
         }
+      } catch (Throwable ex) {
+        Debugger.log("PossibleLeak", ex);
       }
     }
 

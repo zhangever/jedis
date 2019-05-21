@@ -1,5 +1,7 @@
 package redis.clients.util;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -71,25 +73,27 @@ public class Debugger {
         return Thread.currentThread();
     }
 
-    public static void log(Exception e) {
+    public static void log(Throwable e) {
         log(exception2String(e));
     }
 
     public static void log(String msg) {
-        System.out.println("Jedis-Debugger:Thread:[" + currentThread() + "], currentTs:"
+        SimpleDateFormat sdf = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss:SSS");
+        System.out.println("[" +sdf.format(new Date()) + "]Jedis-Debugger:Thread:[" + currentThread() + "], currentTs:"
                 + System.currentTimeMillis() + ", detail:" + msg);
     }
 
     public static void simpleLog(String msg) {
-        System.out.println(msg);
+        SimpleDateFormat sdf = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss:SSS");
+        System.out.println("[" +sdf.format(new Date()) + "]Jedis-Debugger-simpleLog:" + msg);
     }
 
-    public static void log(String msg, Exception e) {
+    public static void log(String msg, Throwable e) {
         log(msg);
         log(e);
     }
 
-    static String exception2String(Exception ex) {
+    static String exception2String(Throwable ex) {
         StringBuilder sb = new StringBuilder(ex.toString());
         sb.append("\n");
         for (StackTraceElement element : ex.getStackTrace()) {

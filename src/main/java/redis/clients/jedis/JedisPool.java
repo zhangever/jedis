@@ -92,7 +92,7 @@ public class JedisPool extends Pool<Jedis> {
         //todo
         if (jedis != null) {
             Client client = jedis.getClient();
-            Debugger.addConn(client.getHost() + ":" + client.getPort());
+            Debugger.addConn(jedis, client.getHost() + ":" + client.getPort());
         }
 
         jedis.setDataSource(this);
@@ -101,12 +101,7 @@ public class JedisPool extends Pool<Jedis> {
 
     public void returnBrokenResource(final Jedis resource) {
         if (resource != null) {
-            try {
-                returnBrokenResourceObject(resource);
-            } finally {
-                //todo
-                Debugger.removeConn();
-            }
+            returnBrokenResourceObject(resource);
         }
     }
 
@@ -121,8 +116,6 @@ public class JedisPool extends Pool<Jedis> {
                 }
                 try {
                     returnResourceObject(resource);
-                    //todo
-                    Debugger.removeConn();
                 } catch (Exception e) {
                     Debugger.log("returnResourceObject failed when returnResource", e);
                     throw e;

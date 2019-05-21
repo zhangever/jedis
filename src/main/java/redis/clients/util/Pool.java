@@ -7,6 +7,7 @@ import org.apache.commons.pool2.PooledObjectFactory;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
+import redis.clients.jedis.Jedis;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.jedis.exceptions.JedisException;
 
@@ -72,6 +73,7 @@ public abstract class Pool<T> implements Closeable {
     }
     try {
       internalPool.returnObject(resource);
+      Debugger.removeConn((Jedis)resource);
     } catch (Exception e) {
       throw new JedisException("Could not return the resource to the pool", e);
     }
@@ -95,7 +97,10 @@ public abstract class Pool<T> implements Closeable {
 
   protected void returnBrokenResourceObject(final T resource) {
     try {
+      //todo
+
       internalPool.invalidateObject(resource);
+      Debugger.removeConn((Jedis) resource);
     } catch (Exception e) {
     	Debugger.log("invalidateObject failed when returnBrokenResourceObject", e);
         throw new JedisException("Could not return the resource to the pool", e);

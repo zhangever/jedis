@@ -41,6 +41,7 @@ public class JedisSlotBasedConnectionHandler extends JedisClusterConnectionHandl
           pool.returnBrokenResource(jedis);
         }
       } catch (Throwable ex) {
+        // TODO
         if (jedis != null) {
           Debugger.log("PossibleJedisLeak :" + ex.getMessage(), ex);
         }

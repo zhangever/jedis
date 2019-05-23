@@ -75,6 +75,7 @@ public abstract class Pool<T> implements Closeable {
       internalPool.returnObject(resource);
       Debugger.removeConn((Jedis)resource);
     } catch (Exception e) {
+      Debugger.log("returnResourceObject failed when returnResource " + e.getMessage(), e);
       throw new JedisException("Could not return the resource to the pool", e);
     }
   }
@@ -97,9 +98,8 @@ public abstract class Pool<T> implements Closeable {
 
   protected void returnBrokenResourceObject(final T resource) {
     try {
-      //todo
-
       internalPool.invalidateObject(resource);
+      //todo
       Debugger.removeConn((Jedis) resource);
     } catch (Exception e) {
     	Debugger.log("invalidateObject failed when returnBrokenResourceObject " + e.getMessage(), e);

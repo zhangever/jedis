@@ -73,6 +73,7 @@ public abstract class Pool<T> implements Closeable {
     try {
       internalPool.returnObject(resource);
     } catch (Exception e) {
+      Debugger.log("returnResourceObject failed when returnResource", e);
       throw new JedisException("Could not return the resource to the pool", e);
     }
   }

@@ -119,7 +119,6 @@ public class JedisPool extends Pool<Jedis> {
     	  try {
     		  returnResourceObject(resource);
     	  } catch (Exception e) {
-    		  Debugger.log("returnResourceObject failed when returnResource", e);
     		  throw e;
     	  }
           //todo
@@ -129,6 +128,15 @@ public class JedisPool extends Pool<Jedis> {
         throw new JedisException("Could not return the resource to the pool", e);
       }
     }
+  }
+  
+  public JedisPool() {
+	  
+  }
+  
+  public static void main(String[] args) {
+	  Jedis connection = new Jedis("127.0.0.1", 6379);
+	  new JedisPool().returnResource(connection);
   }
 
   public int getNumActive() {

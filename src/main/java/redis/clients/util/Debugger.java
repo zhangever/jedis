@@ -1,5 +1,9 @@
 package redis.clients.util;
 
+import redis.clients.jedis.Jedis;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -17,21 +21,23 @@ public class Debugger {
                     return t;
                 }
             });
-    static Map<Thread, ConnInfo> connInfos = new ConcurrentHashMap<Thread, ConnInfo>(128);
+    static Map<Jedis, ConnInfo> connInfos = new ConcurrentHashMap<Jedis, ConnInfo>(128);
 
-    public static void addConn(String hostInfo) {
+    public static void addConn(Jedis jedis, String hostInfo) {
         Thread thread = currentThread();
-        if (connInfos.containsKey(thread)) {
-            log("Jedis-Debugger-Error:Thread:" + thread + " not return the conn before acquire a new one");
-            simpleLog(connInfos.get(thread).toString());
-        } else {
-            connInfos.put(thread, new ConnInfo(System.currentTimeMillis(), thread,
-                    new RuntimeException("connDebugger"), hostInfo));
-        }
+        connInfos.put(jedis, new ConnInfo(System.currentTimeMillis(), thread,
+                new RuntimeException("connDebugger"), hostInfo));
+//        if (connInfos.containsKey(thread)) {
+//            log("Jedis-Debugger-Error:Thread:" + thread + " not return the conn before acquire a new one");
+//            simpleLog(connInfos.get(thread).toString());
+//        } else {
+//            connInfos.put(thread, new ConnInfo(System.currentTimeMillis(), thread,
+//                    new RuntimeException("connDebugger"), hostInfo));
+//        }
     }
 
-    public static void removeConn() {
-        if (connInfos.remove(currentThread()) == null) {
+    public static void removeConn(Jedis jedis) {
+        if (connInfos.remove(jedis) == null) {
             log("Jedis-Debugger-Error:Thread:" + currentThread() + " has nothing to return");
         }
     }
@@ -45,7 +51,7 @@ public class Debugger {
         for (ConnInfo connInfo : connInfos.values()) {
             if ((now-connInfo.ts) > 30*1000) {
                 numOfHeightCost++;
-                simpleLog(connInfo.toString());
+                simpleLog("!! Possible Jedsi Leak: " + connInfo.toString());
             }
         }
         if (numOfHeightCost > 0 || counter % 1000 ==0) {
@@ -71,25 +77,27 @@ public class Debugger {
         return Thread.currentThread();
     }
 
-    public static void log(Exception e) {
+    public static void log(Throwable e) {
         log(exception2String(e));
     }
 
     public static void log(String msg) {
-        System.out.println("Jedis-Debugger:Thread:[" + currentThread() + "], currentTs:"
+        SimpleDateFormat sdf = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss:SSS");
+        System.out.println("[" +sdf.format(new Date()) + "]Jedis-Debugger:Thread:[" + currentThread() + "], currentTs:"
                 + System.currentTimeMillis() + ", detail:" + msg);
     }
 
     public static void simpleLog(String msg) {
-        System.out.println(msg);
+        SimpleDateFormat sdf = new SimpleDateFormat("YYYY-MM-dd HH:mm:ss:SSS");
+        System.out.println("[" +sdf.format(new Date()) + "]Jedis-Debugger-simpleLog:" + msg);
     }
 
-    public static void log(String msg, Exception e) {
+    public static void log(String msg, Throwable e) {
         log(msg);
         log(e);
     }
 
-    static String exception2String(Exception ex) {
+    static String exception2String(Throwable ex) {
         StringBuilder sb = new StringBuilder(ex.toString());
         sb.append("\n");
         for (StackTraceElement element : ex.getStackTrace()) {

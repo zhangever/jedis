@@ -48,23 +48,26 @@ public class JedisClusterInfoCache {
     }
 
     public void printSlot() {
-        Set<Map.Entry<Integer, JedisPool>> entries = slots.entrySet();
-        Debugger.log("start========================= size:" + entries.size());
-        for (Map.Entry<Integer, JedisPool> entry : entries) {
-            Jedis resource = null;
-            try {
-                resource = entry.getValue().getResource();
-                if (resource != null) {
-                    if (resource.getClient() != null) {
-                        Debugger.log("solt:" + entry.getKey() + ", host:" + resource.getClient().getHost() + ":" + resource.getClient().getPort());
-                    }
-                }
-            } finally {
-                if (resource != null) {
-                    resource.close();
-                }
-            }
-        }
+//        Set<Map.Entry<Integer, JedisPool>> entries = slots.entrySet();
+//        StringBuilder sb = new StringBuilder("start========================= size:" + entries.size());
+//        for (Map.Entry<Integer, JedisPool> entry : entries) {
+//            Jedis resource = null;
+//            try {
+//                resource = entry.getValue().getResource();
+//                if (resource != null) {
+//                    if (resource.getClient() != null) {
+//                        sb.append("solt:" + entry.getKey() + ", host:" + resource.getClient().getHost() + ":" + resource.getClient().getPort() + ";");
+//                    }
+//                }
+//            } finally {
+//                if (resource != null) {
+//                    resource.close();
+//                }
+//            }
+//        }
+//        sb.append("\nend=========================");
+//        Debugger.log(sb.toString());
+        Debugger.log("ignore printslot.");
     }
 
     public void discoverClusterSlots(Jedis jedis) {

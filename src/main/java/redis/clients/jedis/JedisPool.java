@@ -111,13 +111,13 @@ public class JedisPool extends Pool<Jedis> {
                 try {
                     resource.resetState();
                 } catch (Exception e) {
-                    Debugger.log("resetState failed when returnResource", e);
+                    Debugger.log("resetState failed when returnResource  " + e.getMessage(), e);
                     throw e;
                 }
                 try {
                     returnResourceObject(resource);
                 } catch (Exception e) {
-                    Debugger.log("returnResourceObject failed when returnResource", e);
+                    Debugger.log("returnResourceObject failed when returnResource  " + e.getMessage(), e);
                     throw e;
                 }
             } catch (Exception e) {

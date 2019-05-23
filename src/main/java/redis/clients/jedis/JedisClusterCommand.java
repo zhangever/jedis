@@ -13,114 +13,114 @@ import java.util.NoSuchElementException;
 
 public abstract class JedisClusterCommand<T> {
 
-  private JedisClusterConnectionHandler connectionHandler;
-  private int commandTimeout;
-  private int redirections;
-  private ThreadLocal<Jedis> askConnection = new ThreadLocal<Jedis>();
+    private JedisClusterConnectionHandler connectionHandler;
+    private int commandTimeout;
+    private int redirections;
+    private ThreadLocal<Jedis> askConnection = new ThreadLocal<Jedis>();
 
-  public JedisClusterCommand(JedisClusterConnectionHandler connectionHandler, int timeout,
-      int maxRedirections) {
-    this.connectionHandler = connectionHandler;
-    this.commandTimeout = timeout;
-    this.redirections = maxRedirections;
-  }
-
-  public abstract T execute(Jedis connection);
-
-  public T run(String key) {
-    if (key == null) {
-      throw new JedisClusterException("No way to dispatch this command to Redis Cluster.");
+    public JedisClusterCommand(JedisClusterConnectionHandler connectionHandler, int timeout,
+                               int maxRedirections) {
+        this.connectionHandler = connectionHandler;
+        this.commandTimeout = timeout;
+        this.redirections = maxRedirections;
     }
 
-    return runWithRetries(key, this.redirections, false, false);
-  }
+    public abstract T execute(Jedis connection);
 
-  private T runWithRetries(String key, int redirections, boolean tryRandomNode, boolean asking) {
-    if (redirections <= 0) {
-      throw new JedisClusterMaxRedirectionsException("Too many Cluster redirections?");
-    }
-
-    Jedis connection = null;
-    try {
-
-      if (asking) {
-        // TODO: Pipeline asking with the original command to make it
-        // faster....
-        connection = askConnection.get();
-        connection.asking();
-
-        // if asking success, reset asking flag
-        asking = false;
-      } else {
-        if (tryRandomNode) {
-          connection = connectionHandler.getConnection();
-        } else {
-          connection = connectionHandler.getConnectionFromSlot(JedisClusterCRC16.getSlot(key));
+    public T run(String key) {
+        if (key == null) {
+            throw new JedisClusterException("No way to dispatch this command to Redis Cluster.");
         }
-      }
 
-      return execute(connection);
-    } catch (NoSuchElementException nse) {
-      assert connection == null;
-
-      Debugger.log("redirection:" + redirections + ", key:"
-              + key + ", slot:" + JedisClusterCRC16.getSlot(key), nse);
-      // retry
-      return runWithRetries(key, redirections - 1, tryRandomNode, asking);
-    } catch (JedisConnectionException jce) {
-      if (tryRandomNode) {
-        // maybe all connection is down
-        throw jce;
-      }
-
-      Debugger.log("redirection:" + redirections + ", key:"
-              + key + ", slot:" + JedisClusterCRC16.getSlot(key), jce);
-      if (connection != null) {
-        Debugger.log("host:" + connection.getClient().getHost()
-                + ", port:" + connection.getClient().getPort());
-      }
-
-      releaseConnection(connection, true);
-      connection = null;
-
-      // retry with random connection
-      return runWithRetries(key, redirections - 1, true, asking);
-    } catch (JedisRedirectionException jre) {
-      Debugger.log("redirection:" + redirections + ", key:"
-              + key + ", slot:" + JedisClusterCRC16.getSlot(key), jre);
-      if (connection != null) {
-        Debugger.log("host:" + connection.getClient().getHost()
-                + ", port:" + connection.getClient().getPort());
-      }
-      if (jre instanceof JedisAskDataException) {
-        asking = true;
-        askConnection.set(this.connectionHandler.getConnectionFromNode(jre.getTargetNode()));
-      } else if (jre instanceof JedisMovedDataException) {
-        // it rebuilds cluster's slot cache
-        // recommended by Redis cluster specification
-        this.connectionHandler.renewSlotCache();
-      } else {
-        throw new JedisClusterException(jre);
-      }
-
-      releaseConnection(connection, false);
-      connection = null;
-
-      return runWithRetries(key, redirections - 1, false, asking);
-    } finally {
-      releaseConnection(connection, false);
+        return runWithRetries(key, this.redirections, false, false);
     }
 
-  }
+    private T runWithRetries(String key, int redirections, boolean tryRandomNode, boolean asking) {
+        if (redirections <= 0) {
+            throw new JedisClusterMaxRedirectionsException("Too many Cluster redirections?");
+        }
 
-  private void releaseConnection(Jedis connection, boolean broken) {
-    if (connection != null) {
-      if (broken) {
-        connectionHandler.returnBrokenConnection(connection);
-      } else {
-        connectionHandler.returnConnection(connection);
-      }
+        Jedis connection = null;
+        try {
+
+            if (asking) {
+                // TODO: Pipeline asking with the original command to make it
+                // faster....
+                connection = askConnection.get();
+                connection.asking();
+
+                // if asking success, reset asking flag
+                asking = false;
+            } else {
+                if (tryRandomNode) {
+                    connection = connectionHandler.getConnection();
+                } else {
+                    connection = connectionHandler.getConnectionFromSlot(JedisClusterCRC16.getSlot(key));
+                }
+            }
+
+            return execute(connection);
+        } catch (NoSuchElementException nse) {
+            assert connection == null;
+
+            Debugger.log("redirection:" + redirections + ", key:"
+                    + key + ", slot:" + JedisClusterCRC16.getSlot(key) + " " + nse.getMessage(), nse);
+            // retry
+            return runWithRetries(key, redirections - 1, tryRandomNode, asking);
+        } catch (JedisConnectionException jce) {
+            if (tryRandomNode) {
+                // maybe all connection is down
+                throw jce;
+            }
+
+            Debugger.log("redirection:" + redirections + ", key:"
+                    + key + ", slot:" + JedisClusterCRC16.getSlot(key) + " " + jce.getMessage(), jce);
+            if (connection != null) {
+                Debugger.log("host:" + connection.getClient().getHost()
+                        + ", port:" + connection.getClient().getPort());
+            }
+
+            releaseConnection(connection, true);
+            connection = null;
+
+            // retry with random connection
+            return runWithRetries(key, redirections - 1, true, asking);
+        } catch (JedisRedirectionException jre) {
+            Debugger.log("redirection:" + redirections + ", key:"
+                    + key + ", slot:" + JedisClusterCRC16.getSlot(key) + " " + jre.getMessage(), jre);
+            if (connection != null) {
+                Debugger.log("host:" + connection.getClient().getHost()
+                        + ", port:" + connection.getClient().getPort());
+            }
+            if (jre instanceof JedisAskDataException) {
+                asking = true;
+                askConnection.set(this.connectionHandler.getConnectionFromNode(jre.getTargetNode()));
+            } else if (jre instanceof JedisMovedDataException) {
+                // it rebuilds cluster's slot cache
+                // recommended by Redis cluster specification
+                this.connectionHandler.renewSlotCache();
+            } else {
+                throw new JedisClusterException(jre);
+            }
+
+            releaseConnection(connection, false);
+            connection = null;
+
+            return runWithRetries(key, redirections - 1, false, asking);
+        } finally {
+            releaseConnection(connection, false);
+        }
+
     }
-  }
+
+    private void releaseConnection(Jedis connection, boolean broken) {
+        if (connection != null) {
+            if (broken) {
+                connectionHandler.returnBrokenConnection(connection);
+            } else {
+                connectionHandler.returnConnection(connection);
+            }
+        }
+    }
 
 }

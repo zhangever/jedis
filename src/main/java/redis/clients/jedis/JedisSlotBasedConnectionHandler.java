@@ -1,11 +1,8 @@
 package redis.clients.jedis;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import java.util.*;
 
-import java.util.Set;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import redis.clients.util.Debugger;
@@ -44,7 +41,9 @@ public class JedisSlotBasedConnectionHandler extends JedisClusterConnectionHandl
           pool.returnBrokenResource(jedis);
         }
       } catch (Throwable ex) {
-        Debugger.log("PossibleLeak", ex);
+        if (jedis != null) {
+          Debugger.log("PossibleJedisLeak :" + ex.getMessage(), ex);
+        }
       }
     }
 

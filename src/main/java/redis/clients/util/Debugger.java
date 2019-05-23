@@ -51,7 +51,7 @@ public class Debugger {
         for (ConnInfo connInfo : connInfos.values()) {
             if ((now-connInfo.ts) > 30*1000) {
                 numOfHeightCost++;
-                simpleLog("!! Possible Jedsi Leak: " + connInfo.toString());
+                simpleLog("!! PossibleJedisLeak: " + connInfo.toString());
             }
         }
         if (numOfHeightCost > 0 || counter % 1000 ==0) {

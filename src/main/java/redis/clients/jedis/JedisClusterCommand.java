@@ -58,17 +58,20 @@ public abstract class JedisClusterCommand<T> {
 
       return execute(connection);
     } catch (JedisConnectionException jce) {
+      releaseConnection(connection, true);
+      connection = null;
+
       if (tryRandomNode) {
         // maybe all connection is down
         throw jce;
       }
 
-      releaseConnection(connection, true);
-      connection = null;
-
       // retry with random connection
       return runWithRetries(key, redirections - 1, true, asking);
     } catch (JedisRedirectionException jre) {
+      releaseConnection(connection, false);
+      connection = null;
+
       if (jre instanceof JedisAskDataException) {
         asking = true;
         askConnection.set(this.connectionHandler.getConnectionFromNode(jre.getTargetNode()));
@@ -79,9 +82,6 @@ public abstract class JedisClusterCommand<T> {
       } else {
         throw new JedisClusterException(jre);
       }
-
-      releaseConnection(connection, false);
-      connection = null;
 
       return runWithRetries(key, redirections - 1, false, asking);
     } finally {
